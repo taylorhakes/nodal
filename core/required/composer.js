@@ -235,7 +235,7 @@ module.exports = (function() {
         let params = this.db.adapter.getParamsFromMultiFilter(multiFilter);
 
         let joins = null;
-        let columns = includeColumns || this.Model.columnNames();
+        let columns = includeColumns || this.Model.visibleColumnNames();
 
         let orderBy = command.orderBy ? [command.orderBy] : []
 
@@ -303,7 +303,7 @@ module.exports = (function() {
     */
     __addJoinsToQuery__(query, queryInfo, includeColumns) {
 
-      let columns = includeColumns || this.Model.columnNames();
+      let columns = includeColumns || this.Model.visibleColumnNames();
 
       queryInfo.joins.forEach(j => {
         columns = columns.concat(this.__joinedColumns__(j[j.length - 1].joinAlias));

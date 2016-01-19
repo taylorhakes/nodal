@@ -403,6 +403,61 @@ module.exports = (function(Nodal) {
 
     });
 
+    it('hidden field should not display', function() {
+      class HiddenTest extends Nodal.Model {}
+
+      HiddenTest.setDatabase(db);
+      HiddenTest.setSchema(schemaParent);
+      HiddenTest.hide('age');
+
+      let hTest = new HiddenTest();
+      let obj = hTest.toObject();
+
+      expect(obj).to.have.ownProperty('id');
+      expect(obj).to.have.ownProperty('name');
+      expect(obj).to.not.have.ownProperty('age');
+      expect(obj).to.have.ownProperty('created_at');
+      expect(obj).to.have.ownProperty('updated_at');
+
+    });
+
+    it('hide multiple fields should not display', function() {
+      class HiddenTest extends Nodal.Model {}
+
+      HiddenTest.setDatabase(db);
+      HiddenTest.setSchema(schemaParent);
+      HiddenTest.hide(['age', 'name']);
+
+      let hTest = new HiddenTest();
+      let obj = hTest.toObject();
+
+      expect(obj).to.have.ownProperty('id');
+      expect(obj).to.not.have.ownProperty('name');
+      expect(obj).to.not.have.ownProperty('age');
+      expect(obj).to.have.ownProperty('created_at');
+      expect(obj).to.have.ownProperty('updated_at');
+
+    });
+
+    it('hide multiple fields 2 calls', function() {
+      class HiddenTest extends Nodal.Model {}
+
+      HiddenTest.setDatabase(db);
+      HiddenTest.setSchema(schemaParent);
+      HiddenTest.hide('age');
+      HiddenTest.hide('name');
+
+      let hTest = new HiddenTest();
+      let obj = hTest.toObject();
+
+      expect(obj).to.have.ownProperty('id');
+      expect(obj).to.not.have.ownProperty('name');
+      expect(obj).to.not.have.ownProperty('age');
+      expect(obj).to.have.ownProperty('created_at');
+      expect(obj).to.have.ownProperty('updated_at');
+
+    });
+
   });
 
 });

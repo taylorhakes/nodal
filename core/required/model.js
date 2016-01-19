@@ -155,6 +155,14 @@ module.exports = (function() {
     }
 
     /**
+    * Get the model's column names excluding hidden fields
+    * @returns {Array}
+    */
+    static visibleColumnNames() {
+      return this.columnNames().filter(v => !this.isHidden(v));
+    }
+
+    /**
     * Get the model's column lookup data
     * @return {Object}
     */
@@ -179,6 +187,16 @@ module.exports = (function() {
     */
     static column(columnName) {
       return this.prototype._columnLookup[columnName];
+    }
+
+    /**
+    * Determine whether a field is hidden
+    * @param {string} field
+    * @returns {*|number|Number}
+    */
+    static isHidden(field) {
+      const hiddenFields = this.prototype._hiddenFields;
+      return !!(hiddenFields && hiddenFields[field]);
     }
 
     /**
@@ -379,6 +397,24 @@ module.exports = (function() {
 
       this.prototype._calculationsList.push(calcField);
 
+    }
+
+    /**
+    * Hide a field from model return
+    * @param {string|[Array]} hiddenFields Fields to hide
+    */
+    static hide(hiddenFields) {
+      if (!Array.isArray(hiddenFields)) {
+        hiddenFields = [hiddenFields];
+      }
+
+      if (!this.prototype.hasOwnProperty('_hiddenFields')) {
+        this.prototype._hiddenFields = {};
+      }
+
+      hiddenFields.forEach(field => {
+        this.prototype._hiddenFields[field] = true;
+      });
     }
 
     /**
@@ -838,7 +874,9 @@ module.exports = (function() {
 
       } else {
 
-        this.fieldList().forEach(key => obj[key] = this._data[key]);
+        this.fieldList()
+          .filter(key => !this.constructor.isHidden(key))
+          .forEach(key => obj[key] = this._data[key]);
         this._calculationsList.forEach(key => obj[key] = this.calculate(key));
         this._joinsList.forEach(key => {
           let cacheValue = this._joinsCache[key];

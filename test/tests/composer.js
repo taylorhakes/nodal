@@ -912,6 +912,25 @@ module.exports = (function(Nodal) {
 
     });
 
+    it('Should not query hidden fields', (done) => {
+      class Parent extends Nodal.Model {}
+
+      Parent.setDatabase(db);
+      Parent.setSchema(schemaParent);
+      Parent.hide('name');
+
+      Parent.query()
+        .end((err, parents) => {
+
+          parents.forEach(function(item) {
+            expect(item.get('id')).to.not.equal(null);
+            expect(item.get('name')).to.equal(null);
+          });
+          done();
+
+        })
+    })
+
   });
 
 });
