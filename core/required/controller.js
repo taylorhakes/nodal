@@ -3,6 +3,8 @@ module.exports = (function() {
   'use strict';
 
   const url = require('url');
+  const dashfiy = require('dashify');
+  const crypt= require('crypto');
   const Template = require('./template.js');
   const Model = require('./model.js');
   const API = require('./api.js');
@@ -27,6 +29,7 @@ module.exports = (function() {
       this._path = url.parse(this._request.url, true).pathname;
       this._status = null;
       this._headers = {};
+      this._cspHeaders = {};
 
       Object.defineProperty(this, 'app', {enumerable: true, value: app});
       Object.defineProperty(this, 'params', {enumerable: true, value: params});
@@ -44,7 +47,6 @@ module.exports = (function() {
         if (err) {
           return this.error(err);
         }
-
         this[method](this, this.params, this.app);
 
       });
@@ -181,6 +183,55 @@ module.exports = (function() {
     */
     getHeader(key, defaultValue) {
       return this._headers.hasOwnProperty(key) ? this._headers[key] : defaultValue;
+    }
+
+    __generateCspNonce__(callback) {
+      crypto.randomBytes(48, function(ex, buf) {
+        callback(buf.toString('hex'));
+      });
+    }
+
+    __updateCsp__() {
+      const obj = this._cspHeaders;
+      const checkField = obj.hasOwnProperty('script-src') ? 'script-src' : 'default-src';
+
+      // Throw an error if user tries to use unsafe settings
+      if (!obj[checkField] || obj[checkField].indexOf('unsafe-inline') > -1) {
+        throw new Error('Insecure CSP! \'unsafe-inline\' scripts are very dangerous and can lead to XSS vulnerabilities.' +
+          ' Please visit this <Url> for other options.')
+      }
+
+
+      this.__generateCspNonce__((nonce) => {
+        const header = Object
+          .keys(obj)
+          .map(k => {
+            let val = k + ' ' + obj[k];
+            if (k === 'script-src') {
+              val += ' nonce-' + nonce;
+            }
+            return val;
+          })
+          .join('; ');
+
+        this.setHeader('Content-Security-Policy', header);
+        this.app.setTemplateData('csp_nonce', nonce);
+      })
+
+    }
+
+    /**
+    *
+    * @param object
+    */
+    setCspHeaders(object) {
+      this._cspHeaders = Object.keys(object)
+        .map(key => dashfiy(key))
+        .reduce((prev, key) => {
+          prev[key] = object[key].join(' ');
+          return prev;
+        }, {});
+      this.__updateCsp__();
     }
 
     /**
